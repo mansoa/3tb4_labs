@@ -225,7 +225,7 @@ void CAN1_RX0_IRQHandler(void){
 		 CAN_Receive(CAN1, CAN_FIFO0, &RxMessage);          // Receive the message
 		 STM_EVAL_LEDOn(LED4);                          // LED on indicates message received
 	
-		 Msg_Display(5, 1, (uint8_t*)"DataRx:", RxMessage.Data[0]); //Display data received 
+		 Msg_Display(5, 1, (uint8_t*)"DataRx:", RxMessage.Data[1]); //Display data received 
  		 CAN_ClearFlag(CANx, CAN_FLAG_FMP0);         // Clear the flag
 	}
 }

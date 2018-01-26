@@ -89,18 +89,18 @@ SystemCoreClock=180000000Hz
 		CAN_Config(); // WE NEED TO REMOVE THIS FUNCTION
 		
 		/*Configuration of LCD*/
-		LCD_Config();
+		//LCD_Config();
 
 		//after set up NVIC for CAN_RX_IRQn 
 	//	NVIC_SetPriority(CAN1_RX0_IRQn,2);  //Set CAN1 RX0_IRQn priority lower than SysTick's
 		
-    STM_EVAL_LEDOn(LED3); // LED on after reset button pushed
+    //STM_EVAL_LEDOn(LED3); // LED on after reset button pushed
 		while (1)
 		{   
 			while(STM_EVAL_PBGetState(BUTTON_USER) != KEY_PRESSED){  // If user button pressed
 				TransmitMailbox=CAN_Transmit(CANx, &TxMessage);        // Transmit message
 				STM_EVAL_LEDOff(LED3);                           // LED off indicates message sent
-				Msg_Display(1, 1, (uint8_t*)"DataTx:", TxMessage.Data[0]); // Display the transmitted message data
+				//Msg_Display(1, 1, (uint8_t*)"DataTx:", TxMessage.Data[0]); // Display the transmitted message data
 			
 				Delay(100);
         				
@@ -118,7 +118,7 @@ SystemCoreClock=180000000Hz
 //					CAN_Receive(CAN1, CAN_FIFO0, &RxMessage);          // Receive the message
 //					STM_EVAL_LEDOn(LED4);                          // LED on indicates message received
 //				
-//					Msg_Display(5, 1, (uint8_t*)"DataRx:", RxMessage.Data[0]); //Display data received 
+//					Msg_Display(5, 1, (uint8_t*)"DataRx:", RxMessage.Data[1]); //Display data received 
 //					CAN_ClearFlag(CANx, CAN_FLAG_FMP0);         // Clear the flag
 //				} 
 			
@@ -158,44 +158,52 @@ void CAN_Config(void)
 
   /* CAN GPIOs configuration **************************************************/
 
-  /* Enable GPIO clock */
+	GPIO_InitTypeDef GPIO_InitStructure;
+	CAN_InitTypeDef CAN_InitStructure;
+	CAN_FilterInitTypeDef CAN_FilterInitStructure;
 
+  /* Enable GPIOD clock */
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+	/* Connect PD1 to CAN1_Tx pin */
+	 GPIO_PinAFConfig(GPIOD, GPIO_PinSource0, GPIO_AF_CAN1);
+	/* Connect PD0 to CAN1_Rx pin */
+	GPIO_PinAFConfig(GPIOD, GPIO_PinSource1, GPIO_AF_CAN1);
 
-  /* Connect CAN pins to AF9 */
-	
+	/* Configure CAN1_Rx(PD0) and CAN1_Tx(PD1) pins */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(GPIOD, &GPIO_InitStructure);
+ 
+  /* CAN configuration *****************************************/ 
 
-  /* Configure CAN RX and TX pins */
-	
-	
-  /* Use GPIO_Init() to initialize GPIO*/
-
-
-  /* CAN configuration ********************************************************/  
   /* Enable CAN clock */
   RCC_APB1PeriphClockCmd(CAN_CLK, ENABLE);
   
   /* CAN register init */
-  CAN_DeInit(CANx);
+  //CAN_DeInit(CANx);
 
   /* CAN cell init */
- // CAN_InitStructure.CAN_TTCM = ?;
-//  CAN_InitStructure.CAN_ABOM = ?;
-//  CAN_InitStructure.CAN_AWUM = ?;
-  CAN_InitStructure.CAN_NART = ENABLE;
-//  CAN_InitStructure.CAN_RFLM = ?;
-//  CAN_InitStructure.CAN_TXFP = ?;
-	CAN_InitStructure.CAN_Mode = CAN_Mode_Silent_LoopBack; // Modify for normal mode
+  CAN_InitStructure.CAN_TTCM = DISABLE;
+  CAN_InitStructure.CAN_ABOM = DISABLE;
+  CAN_InitStructure.CAN_AWUM = DISABLE;
+  CAN_InitStructure.CAN_NART = DISABLE;
+  CAN_InitStructure.CAN_RFLM = DISABLE;
+  CAN_InitStructure.CAN_TXFP = DISABLE;
+	CAN_InitStructure.CAN_Mode = CAN_Mode_Normal; // Modify for normal mode
  
- // CAN_InitStructure.CAN_SJW = ?;
+  CAN_InitStructure.CAN_SJW = CAN_SJW_1tq;
     
   // CAN Baudrate = 500 Bps 
 	// The bus the CAN is attached is of 45 Mhz. 
 	//with prescaler 3 (this is the "real" prescaler, during init process, 2 will be written in register) while 1tq=2 clock cycle. (CAN clocked at 45  MHz for F429i board) 
 	// so the baudrate should be 45/3/2/15   (15 is: 1+ 9forBS1 + 5forBS2)  =0.5 M Bps (500 K Bps) 
 	
-//  CAN_InitStructure.CAN_BS1 = ?;
-//  CAN_InitStructure.CAN_BS2 = ?;
-//  CAN_InitStructure.CAN_Prescaler = ?;
+  CAN_InitStructure.CAN_BS1 = CAN_BS1_9tq;
+  CAN_InitStructure.CAN_BS2 = CAN_BS2_5tq;
+  CAN_InitStructure.CAN_Prescaler = 3;
   CAN_Init(CANx, &CAN_InitStructure);
 
   /* CAN filter init */
@@ -204,14 +212,14 @@ void CAN_Config(void)
 #else /* USE_CAN2 */
   CAN_FilterInitStructure.CAN_FilterNumber = 14;
 #endif  /* USE_CAN1 */
-//  CAN_FilterInitStructure.CAN_FilterMode = ?;
-//  CAN_FilterInitStructure.CAN_FilterScale = ?;
+  CAN_FilterInitStructure.CAN_FilterMode = CAN_FilterMode_IdMask;
+  CAN_FilterInitStructure.CAN_FilterScale = CAN_FilterScale_32bit;
 	
-//	CAN_FilterInitStructure.CAN_FilterIdHigh = 0x0000;
-//	CAN_FilterInitStructure.CAN_FilterIdLow = 0x0000;
+	CAN_FilterInitStructure.CAN_FilterIdHigh = 0xFFFF;
+	CAN_FilterInitStructure.CAN_FilterIdLow = 0x0000;
 
-//  CAN_FilterInitStructure.CAN_FilterMaskIdHigh = 0x0000;
-//  CAN_FilterInitStructure.CAN_FilterMaskIdLow = 0x0000;
+  CAN_FilterInitStructure.CAN_FilterMaskIdHigh = 0x0000;
+  CAN_FilterInitStructure.CAN_FilterMaskIdLow = 0x0000;
   
 	CAN_FilterInitStructure.CAN_FilterFIFOAssignment = 0;
   CAN_FilterInitStructure.CAN_FilterActivation = ENABLE;
