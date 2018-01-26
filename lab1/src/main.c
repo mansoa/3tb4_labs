@@ -86,7 +86,7 @@ SystemCoreClock=180000000Hz
 		STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO);   //or BUTTON_MODE_EXTI
 		
 		/* CAN configuration */
-		CAN_Config();
+		CAN_Config(); // WE NEED TO REMOVE THIS FUNCTION
 		
 		/*Configuration of LCD*/
 		LCD_Config();
